@@ -1,0 +1,14 @@
+/**
+ * $clazz.comment
+ */
+import api from "@/utils/request.js";
+
+const prefix = '/$clazz.reqPrefix'
+
+#parse("AxiosCodeGen_method")
+
+// region pojo def
+
+#parse("AxiosCodeGen_doc")
+
+// endregion

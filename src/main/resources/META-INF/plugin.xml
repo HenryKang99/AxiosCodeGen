@@ -1,15 +1,41 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.henrykang99.axioscodegen</id>
+    <id>site.henrykang.plugin.axios-code-gen</id>
     <name>AxiosCodeGen</name>
-    <vendor>henrykang99</vendor>
+    <vendor>HenryKang</vendor>
 
+    <!-- Product and plugin compatibility requirements. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>JavaScript</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
+    <!-- Extension points defined by the plugin. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.henrykang99.axioscodegen.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.henrykang99.axioscodegen.startup.MyProjectActivity" />
+        <notificationGroup id="site.henrykang.plugin.AxiosCodeGenNotificationGroup" displayType="BALLOON"/>
+
+        <fileTemplateGroup implementation="site.henrykang.plugin.entity.TemplateGroupFactory"/>
+
+        <intentionAction>
+            <language>JAVA</language>
+            <className>site.henrykang.plugin.action.FunctionGenIntention</className>
+        </intentionAction>
+
+        <intentionAction>
+            <language>JAVA</language>
+            <className>site.henrykang.plugin.action.PojoGenIntention</className>
+        </intentionAction>
     </extensions>
+
+
+    <actions>
+        <action id="site.henrykang.plugin.action.FileGenAction" class="site.henrykang.plugin.action.FileGenAction" text="Generate Axios Code" description="Generate axios code snippets from Controller.java">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control alt G" second-keystroke="A"/>
+        </action>
+    </actions>
+
+    <applicationListeners>
+        <listener class="site.henrykang.plugin.listener.MyDynamicPluginListener" topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+    </applicationListeners>
 </idea-plugin>

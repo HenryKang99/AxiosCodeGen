@@ -1,0 +1,13 @@
+#foreach($po in $pojoList)
+/**
+ * $po.comment
+  #foreach($t in $po.typeParamList)
+   * @template $t
+  #end
+ * @typedef $po.name
+  #foreach($field in $po.fieldList)
+   * @property {$field.jsType} $field.name $field.comment
+  #end
+ */
+
+#end

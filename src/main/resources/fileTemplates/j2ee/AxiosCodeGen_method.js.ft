@@ -1,0 +1,37 @@
+#foreach($m in $clazz.methodList)
+/**
+ * $m.comment
+  #foreach($p in $m.allParams)
+   * @param {$p.jsType}#if($p.isRequired) $p.name #else [$p.name]#end $p.comment
+  #end
+ */
+  ## get delete
+  #if($m.method == "get" || $m.method == "delete")
+  export function ${m.name}(#if($m.paramsCnt>3) \{$m.allParamsNameStr\} #else $m.allParamsNameStr #end) {
+    return api.${m.method}(`${prefix}/${m.uri}` #if($m.queryParamsNameStr != "") , {params: {$m.queryParamsNameStr}} #end);
+  }
+  #else ## post put patch
+  export function ${m.name}(#if($m.paramsCnt>3) {$m.allParamsNameStr} #else $m.allParamsNameStr #end) {
+    #set($postData = "null")
+    ## formData
+    #if(!$m.partParams.isEmpty())
+      #set($postData = "formData")
+      let formData = new FormData();
+      #foreach($p in $m.partParams)
+        #if($p.isPojo)
+          formData.append('$p.name', new Blob([JSON.stringify($p.name)], {type: 'application/json'}))
+        #elseif($p.isArray && $p.isFile)
+          for (const f of $p.name) {
+            formData.append('$p.name', f);
+          }
+        #else
+          formData.append('$p.name', $p.name);
+        #end
+      #end
+    #else ## jsonData
+      #if($m.bodyParam) #set($postData = $m.bodyParam.name) #end
+    #end
+    return api.${m.method}(`${prefix}/${m.uri}`, $postData #if($m.queryParamsNameStr != "") , {params: {$m.queryParamsNameStr}} #end);
+  }
+  #end
+#end

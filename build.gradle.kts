@@ -1,6 +1,7 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import java.util.Base64
 
 plugins {
     id("java") // Java support
@@ -16,11 +17,20 @@ version = providers.gradleProperty("pluginVersion").get()
 
 // Set the JVM language level used to build the project.
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 // Configure project's dependencies
 repositories {
+    maven {
+        setUrl("https://maven.aliyun.com/repository/public")
+    }
     mavenCentral()
 
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
@@ -36,7 +46,8 @@ dependencies {
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
-        create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+        local("C:/Users/henry/AppData/Local/Programs/IntelliJ IDEA Ultimate")
+        // create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
 
         // Plugin Dependencies. Uses `platformBundledPlugins` property from the gradle.properties file for bundled IntelliJ Platform plugins.
         bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
@@ -49,6 +60,9 @@ dependencies {
 
         testFramework(TestFrameworkType.Platform)
     }
+
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html
@@ -89,8 +103,9 @@ intellijPlatform {
     }
 
     signing {
-        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
-        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        // certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN").map { String(Base64.getDecoder().decode(it)) }
+        certificateChainFile = layout.projectDirectory.file("certs/chain.crt")
+        privateKey = providers.environmentVariable("PRIVATE_KEY").map { String(Base64.getDecoder().decode(it)) }
         password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
 
