@@ -1,7 +1,7 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import java.util.Base64
+import java.util.*
 
 plugins {
     id("java") // Java support
@@ -117,8 +117,11 @@ intellijPlatform {
         channels = providers.gradleProperty("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
+    // https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html#intellijPlatform-pluginVerification-ides
     pluginVerification {
         ides {
+            // local("C:/Users/henry/AppData/Local/Programs/IntelliJ IDEA Ultimate")
+            create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
             recommended()
         }
     }
