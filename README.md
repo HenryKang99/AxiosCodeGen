@@ -1,8 +1,8 @@
 # AxiosCodeGen
 
 ![Build](https://github.com/HenryKang99/AxiosCodeGen/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+[![Version](https://img.shields.io/jetbrains/plugin/v/28431-axioscodegen.svg)](https://plugins.jetbrains.com/plugin/28431-axioscodegen)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/28431-axioscodegen.svg)](https://plugins.jetbrains.com/plugin/28431-axioscodegen)
 
 <!-- Plugin description -->
 
@@ -260,9 +260,9 @@ export function upload({q, userInfo, file, fileList}) {
 
 - Using JetBrains Marketplace:
 
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
+  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/28431-axioscodegen) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
 
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
+  You can also download the [latest release](https://plugins.jetbrains.com/plugin/28431-axioscodegen/versions) from JetBrains Marketplace and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
 - Manually:
