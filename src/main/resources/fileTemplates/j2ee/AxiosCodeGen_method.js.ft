@@ -4,6 +4,12 @@
   #foreach($p in $m.allParams)
    * @param {$p.jsType}#if($p.isRequired) $p.name #else [$p.name]#end $p.comment
   #end
+  #if($m.returnJsType)
+  ## Note: Choose the format based on your axios configuration:
+  ## - If using response interceptor that returns response.data directly: use Promise<$m.returnJsType>
+  ## - Otherwise (standard axios response): use Promise<{data: $m.returnJsType}>
+   * @returns {Promise<$m.returnJsType>}
+  #end
  */
   ## get delete
   #if($m.method == "get" || $m.method == "delete")

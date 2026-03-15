@@ -51,6 +51,8 @@ public class ClassInfo {
             .flatMap(methodInfo -> methodInfo.getAllParams().stream())
             .flatMap(paramInfo -> paramInfo.getPojoSet().stream())
             .collect(Collectors.toSet());
+        // 收集返回值涉及的 POJO
+        classInfo.methodList.forEach(methodInfo -> classInfo.pojoSet.addAll(methodInfo.getReturnPojoSet()));
 
         return classInfo;
     }

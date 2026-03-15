@@ -2,8 +2,10 @@ package site.henrykang.plugin.entity;
 
 import com.intellij.openapi.util.Pair;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiType;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
+import site.henrykang.plugin.service.JsDocTypeResolver;
 import site.henrykang.plugin.util.MyPsiUtil;
 
 import java.util.*;
@@ -39,6 +41,11 @@ public class MethodInfo {
     /** 查询参数名称 join */
     private String queryParamsNameStr;
 
+    /** 返回值的 JS 类型，用于 JSDoc @returns */
+    private String returnJsType;
+    /** 返回值涉及的 pojo 全类名集合 */
+    private Set<String> returnPojoSet;
+
     public static MethodInfo handlePsiMethod(@NotNull PsiMethod psiMethod) {
         MethodInfo methodInfo = new MethodInfo();
         methodInfo.comment = MyPsiUtil.getSimpleComment(psiMethod.getAnnotation(Constant.ANNO_SWAGGER_OPERATION), List.of("summary"), psiMethod.getDocComment());
@@ -62,6 +69,15 @@ public class MethodInfo {
         methodInfo.allParamsNameStr = methodInfo.allParams.stream().map(ParamInfo::getName).collect(Collectors.joining(", "));
         methodInfo.queryParamsNameStr = methodInfo.queryParams.stream().map(ParamInfo::getName).collect(Collectors.joining(", "));
         methodInfo.paramsCnt = methodInfo.allParams.size();
+
+        // 处理返回值类型
+        PsiType returnType = psiMethod.getReturnType();
+        if (returnType != null) {
+            Pair<String, Set<String>> returnTypePair = JsDocTypeResolver.getInstance(psiMethod.getProject()).resolve(returnType);
+            methodInfo.returnJsType = returnTypePair.getFirst();
+            methodInfo.returnPojoSet = returnTypePair.getSecond();
+        }
+
         return methodInfo;
     }
 
