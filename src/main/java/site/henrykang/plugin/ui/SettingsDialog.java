@@ -8,7 +8,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.psi.PsiPackage;
+import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
@@ -32,7 +35,9 @@ public class SettingsDialog extends DialogWrapper {
 
     private final JBTextField savePathField = new JBTextField();
     private final JBTextField pojoPackagesField = new JBTextField();
-    private final JCheckBox clearCacheCheckBox = new JCheckBox();
+    private final JBCheckBox clearCacheCheckBox = new JBCheckBox();
+    private final JBCheckBox ignoreDeprecatedCheckBox = new JBCheckBox();
+    private final JBTextArea ignoreParamTypesArea = new JBTextArea();
 
     public SettingsDialog(@Nullable Project project) {
         super(project);
@@ -43,10 +48,12 @@ public class SettingsDialog extends DialogWrapper {
 
     @Override
     protected @Nullable JComponent createCenterPanel() {
-        int labelWidth = JBUI.scale(120);
+        int labelWidth = JBUI.scale(150);
         JPanel savePathPanel = initSavePathPanel(labelWidth);
         JPanel pojoPanel = initPojoPackagePanel(labelWidth);
         JPanel clearCachePanel = initClearCachePanel(labelWidth);
+        JPanel ignoreDeprecatedPanel = initIgnoreDeprecatedPanel(labelWidth);
+        JPanel ignoreParamTypesPanel = initIgnoreParamTypesPanel(labelWidth);
 
         JPanel panel = FormBuilder.createFormBuilder()
             .addComponent(savePathPanel)
@@ -54,8 +61,12 @@ public class SettingsDialog extends DialogWrapper {
             .addComponent(pojoPanel)
             .addVerticalGap(JBUI.scale(8))
             .addComponent(clearCachePanel)
+            .addVerticalGap(JBUI.scale(8))
+            .addComponent(ignoreDeprecatedPanel)
+            .addVerticalGap(JBUI.scale(8))
+            .addComponent(ignoreParamTypesPanel)
             .getPanel();
-        panel.setPreferredSize(new Dimension(500, panel.getPreferredSize().height));
+        panel.setPreferredSize(new Dimension(650, panel.getPreferredSize().height));
         return panel;
     }
 
@@ -137,6 +148,66 @@ public class SettingsDialog extends DialogWrapper {
         return panel;
     }
 
+    private @NotNull JPanel initIgnoreDeprecatedPanel(int labelWidth) {
+        String isSelected = PropertiesManager.getInstance(project).get(Constant.CACHE_KEY_IGNORE_DEPRECATED);
+        // 默认选中
+        this.ignoreDeprecatedCheckBox.setSelected(isSelected == null || Boolean.parseBoolean(isSelected));
+
+        JBLabel label = new JBLabel("Ignore @Deprecated");
+        JLabel helpIcon = new JLabel(AllIcons.General.ContextHelp);
+        helpIcon.setToolTipText("If checked, the plugin will ignore @Deprecated annotated controller methods");
+
+        JPanel labelPanel = new JPanel();
+        labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+        labelPanel.setOpaque(false);
+        labelPanel.add(label);
+        labelPanel.add(Box.createHorizontalStrut(4));
+        labelPanel.add(helpIcon);
+        labelPanel.setPreferredSize(new Dimension(labelWidth, label.getPreferredSize().height));
+
+        JPanel panel = new JPanel(new BorderLayout(5, 0));
+        panel.add(labelPanel, BorderLayout.WEST);
+        panel.add(ignoreDeprecatedCheckBox, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private @NotNull JPanel initIgnoreParamTypesPanel(int labelWidth) {
+        String value = PropertiesManager.getInstance(project).get(Constant.CACHE_KEY_IGNORE_PARAM_TYPES);
+        // 设置默认值
+        if (StringUtil.isEmpty(value)) {
+            value = """
+                javax.servlet.http.*,
+                org.springframework.validation.BindingResult,
+                """;
+        }
+        ignoreParamTypesArea.setLineWrap(true);
+        ignoreParamTypesArea.setWrapStyleWord(true);
+        ignoreParamTypesArea.setRows(4);
+        ignoreParamTypesArea.setText(value);
+
+        JBLabel label = new JBLabel("Ignore param types");
+        JLabel helpIcon = new JLabel(AllIcons.General.ContextHelp);
+        helpIcon.setToolTipText("Parameter types to ignore, separated by commas. Supports wildcard * for package names.");
+
+        JPanel labelPanel = new JPanel();
+        labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+        labelPanel.setOpaque(false);
+        labelPanel.add(label);
+        labelPanel.add(Box.createHorizontalStrut(4));
+        labelPanel.add(helpIcon);
+        labelPanel.setPreferredSize(new Dimension(labelWidth, label.getPreferredSize().height));
+
+        JBScrollPane scrollPane = new JBScrollPane(ignoreParamTypesArea);
+        scrollPane.setPreferredSize(new Dimension(300, 80));
+
+        JPanel panel = new JPanel(new BorderLayout(5, 0));
+        panel.add(labelPanel, BorderLayout.WEST);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
     public String getSavePath() {
         return savePathField.getText().trim();
     }
@@ -147,6 +218,14 @@ public class SettingsDialog extends DialogWrapper {
 
     public Boolean isClearCacheSelected() {
         return this.clearCacheCheckBox.isSelected();
+    }
+
+    public Boolean isIgnoreDeprecatedSelected() {
+        return this.ignoreDeprecatedCheckBox.isSelected();
+    }
+
+    public String getIgnoreParamTypes() {
+        return ignoreParamTypesArea.getText().trim();
     }
 
 }

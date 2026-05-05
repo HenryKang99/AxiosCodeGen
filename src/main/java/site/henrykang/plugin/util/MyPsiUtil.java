@@ -29,6 +29,31 @@ public class MyPsiUtil {
     private static final Logger LOG = Logger.getInstance(MyPsiUtil.class);
 
     /**
+     * 从注释中提取完整描述信息（不包含@param、@return等标签）
+     */
+    @NotNull
+    public static String getFullDescription(PsiDocComment psiDocComment) {
+        if (psiDocComment == null) return "";
+
+        // 获取描述部分的所有元素
+        PsiElement[] descriptionElements = psiDocComment.getDescriptionElements();
+        if (descriptionElements.length == 0) return "";
+
+        // 收集所有非空的描述文本
+        StringBuilder descriptionBuilder = new StringBuilder();
+        for (PsiElement element : descriptionElements) {
+            if (element != null) {
+                String text = element.getText();
+                if (StringUtil.isNotBlank(text)) {
+                    descriptionBuilder.append(text);
+                }
+            }
+        }
+
+        return descriptionBuilder.toString();
+    }
+
+    /**
      * 从注释中提取第一行非空描述
      */
     @NotNull
@@ -49,20 +74,30 @@ public class MyPsiUtil {
     public static String getAnnotationValueLiteralStrOrDefault(PsiAnnotation psiAnnotation, String attrName, String defaultValue) {
         return Optional.ofNullable(psiAnnotation)
             .map(anno -> anno.findAttributeValue(attrName))
-            .map(value -> {
-                // 适用于 @Xxx(attr1="xx", attr2=true) -> xx
-                if (value instanceof PsiLiteralExpression) {
-                    Object obj = ((PsiLiteralExpression) value).getValue();
-                    // 空字符串也返回 null
-                    if (obj != null && StringUtil.isNotBlank(obj.toString())) return obj.toString().trim();
-                    return null;
-                }
-                // 适用于 @Xxx(attr1=xx.class) -> xx
-                else if (value instanceof PsiReferenceExpression) {
-                    return ((PsiReferenceExpression) value).getReferenceName();
-                }
-                return null;
-            }).orElse(defaultValue == null ? "" : defaultValue);
+            .map(MyPsiUtil::getAnnotationValueLiteralStrOrDefault)
+            .orElse(defaultValue == null ? "" : defaultValue);
+    }
+
+    private static String getAnnotationValueLiteralStrOrDefault(PsiElement value) {
+        // 适用于 @Xxx(attr1="xx", attr2=true) -> xx
+        if (value instanceof PsiLiteralExpression) {
+            Object obj = ((PsiLiteralExpression) value).getValue();
+            // 空字符串也返回 null
+            if (obj != null && StringUtil.isNotBlank(obj.toString())) return obj.toString().trim();
+            return null;
+        }
+        // 适用于 @Xxx(attr1=xx.class) -> xx
+        else if (value instanceof PsiReferenceExpression) {
+            return ((PsiReferenceExpression) value).getReferenceName();
+        }
+        // 适用于 @Xxx(attr1={x1.class, x2.class}) -> x1
+        else if (value instanceof PsiArrayInitializerMemberValue) {
+            PsiAnnotationMemberValue[] initializers = ((PsiArrayInitializerMemberValue) value).getInitializers();
+            if (initializers.length > 0) {
+                return getAnnotationValueLiteralStrOrDefault(initializers[0]);
+            }
+        }
+        return null;
     }
 
     /**
@@ -90,7 +125,7 @@ public class MyPsiUtil {
         String str = getAnnotationValueLiteralStr(psiAnnotation, attrNames).stream()
             .filter(StringUtil::isNotBlank)
             .collect(Collectors.joining(", "));
-        return StringUtil.isBlank(str) ? getFirstLineComment(psiDocComment) : str;
+        return StringUtil.isBlank(str) ? getFullDescription(psiDocComment) : str;
     }
 
     /**

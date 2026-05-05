@@ -19,8 +19,18 @@
   #else ## post put patch
   export function ${m.name}(#if($m.paramsCnt>3) {$m.allParamsNameStr} #else $m.allParamsNameStr #end) {
     #set($postData = "null")
+    #set($contentType = "")
+    ## urlencodedParams
+    #if(!$m.urlencodedParams.isEmpty())
+      #set($postData = "urlencodedData")
+      #set($contentType = "'application/x-www-form-urlencoded'")
+      const urlencodedData = {
+        #foreach($p in $m.urlencodedParams)
+          #if($p.isPojo)...#end$p.name,
+        #end
+      };
     ## formData
-    #if(!$m.partParams.isEmpty())
+    #elseif(!$m.partParams.isEmpty())
       #set($postData = "formData")
       let formData = new FormData();
       #foreach($p in $m.partParams)
@@ -34,10 +44,11 @@
           formData.append('$p.name', $p.name);
         #end
       #end
-    #else ## jsonData
+    ## jsonData
+    #else
       #if($m.bodyParam) #set($postData = $m.bodyParam.name) #end
     #end
-    return api.${m.method}(`${prefix}/${m.uri}`, $postData #if($m.queryParamsNameStr != "") , {params: {$m.queryParamsNameStr}} #end);
+    return api.${m.method}(`${prefix}/${m.uri}`, $postData #if($m.queryParamsNameStr != "") , {params: {$m.queryParamsNameStr}} #end, {headers: {'Content-Type': $contentType}});
   }
   #end
 #end

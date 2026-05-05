@@ -1,7 +1,12 @@
 package site.henrykang.plugin.action;
 
 import com.intellij.notification.NotificationType;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbService;
@@ -25,7 +30,10 @@ import site.henrykang.plugin.util.TemplateUtil;
 import site.henrykang.plugin.util.UiUtil;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -58,10 +66,12 @@ public class FileGenAction extends AnAction {
         String savePath = "";
         String pojoPackages = "";
         Boolean isClearCache = false;
+        Boolean isIgnoreDeprecated = true;
         if (dialog.showAndGet()) {
             savePath = dialog.getSavePath();
             pojoPackages = dialog.getPojoPackages();
             isClearCache = dialog.isClearCacheSelected();
+            isIgnoreDeprecated = dialog.isIgnoreDeprecatedSelected();
 
             if (StringUtil.isBlank(savePath)) {
                 UiUtil.showNotification(project, "No save path selected", NotificationType.WARNING, TimeUnit.SECONDS.toMillis(3));
@@ -76,6 +86,8 @@ public class FileGenAction extends AnAction {
             pm.put(Constant.CACHE_KEY_SAVE_PATH, savePath);
             pm.put(Constant.CACHE_KEY_POJO_PACKAGES, pojoPackages);
             pm.put(Constant.CACHE_KEY_IS_CLEAR_CACHE, isClearCache.toString());
+            pm.put(Constant.CACHE_KEY_IGNORE_DEPRECATED, isIgnoreDeprecated.toString());
+            pm.put(Constant.CACHE_KEY_IGNORE_PARAM_TYPES, dialog.getIgnoreParamTypes());
             if (isClearCache) {
                 JsDocTypeResolver.getInstance(project).invalidateCache();
             }
@@ -157,15 +169,11 @@ public class FileGenAction extends AnAction {
             // 转换为 PsiClass 对象
             .flatMap(file -> {
                 PsiFile psiFile = psiManager.findFile(file);
-                if (!(psiFile instanceof PsiJavaFile psiJavaFile)) return null;
+                if (!(psiFile instanceof PsiJavaFile psiJavaFile)) return Stream.empty();
                 return Stream.of(psiJavaFile.getClasses());
             })
             // 只保留被 RequestMapping 注解修饰的类
-            .map(clazz -> {
-                if (clazz == null) return null;
-                return clazz.hasAnnotation(Constant.ANNO_REQUEST_MAPPING) ? clazz : null;
-            })
-            .filter(Objects::nonNull)
+            .flatMap(clazz -> clazz.hasAnnotation(Constant.ANNO_REQUEST_MAPPING) ? Stream.of(clazz) : Stream.empty())
             .collect(Collectors.toList());
     }
 

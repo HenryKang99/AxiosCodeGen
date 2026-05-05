@@ -6,11 +6,18 @@ import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.codeInspection.util.IntentionName;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lang.javascript.JavaScriptFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.*;
+import com.intellij.openapi.util.Computable;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
@@ -27,6 +34,7 @@ import site.henrykang.plugin.util.TemplateUtil;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +55,9 @@ public class FunctionGenIntention extends BaseElementAtCaretIntentionAction {
         }
         // 解析
         MethodInfo methodInfo = MethodInfo.handlePsiMethod(psiMethod);
-        List<PojoInfo> pojoList = PojoInfo.handlePojoInfo(psiClass.getProject(), methodInfo.getAllParams().stream().flatMap(param -> param.getPojoSet().stream()).collect(Collectors.toSet()));
+        Set<String> pojoSet = methodInfo.getAllParams().stream().flatMap(param -> param.getPojoSet().stream()).collect(Collectors.toSet());
+        pojoSet.addAll(methodInfo.getReturnPojoSet());
+        List<PojoInfo> pojoList = PojoInfo.handlePojoInfo(psiClass.getProject(), pojoSet);
         // 模板填充
         VelocityContext ctx = new VelocityContext();
         ctx.put("clazz",  new ClassInfo().setMethodList(List.of(methodInfo)));
@@ -62,7 +72,7 @@ public class FunctionGenIntention extends BaseElementAtCaretIntentionAction {
 
     @Override
     public boolean isAvailable(@NotNull Project project, @NotNull Editor editor, @NotNull PsiElement psiElement) {
-        return ReadAction.compute(() -> {
+        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
             if (DumbService.isDumb(project) || !(psiElement instanceof PsiIdentifier) || psiElement.getLanguage() != JavaLanguage.INSTANCE) {
                 return false;
             }

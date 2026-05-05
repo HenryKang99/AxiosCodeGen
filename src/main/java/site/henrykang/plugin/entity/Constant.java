@@ -25,6 +25,8 @@ public class Constant {
     public static final String CACHE_KEY_SAVE_PATH = String.join(".", PLUGIN_PACKAGE_NAME, PLUGIN_NAME, "cache", "savePath");
     public static final String CACHE_KEY_POJO_PACKAGES = String.join(".", PLUGIN_PACKAGE_NAME, PLUGIN_NAME, "cache", "pojoPackages");
     public static final String CACHE_KEY_IS_CLEAR_CACHE = String.join(".", PLUGIN_PACKAGE_NAME, PLUGIN_NAME, "cache", "isClearCache");
+    public static final String CACHE_KEY_IGNORE_DEPRECATED = String.join(".", PLUGIN_PACKAGE_NAME, PLUGIN_NAME, "cache", "ignoreDeprecated");
+    public static final String CACHE_KEY_IGNORE_PARAM_TYPES = String.join(".", PLUGIN_PACKAGE_NAME, PLUGIN_NAME, "cache", "ignoreParamTypes");
 
     // template name
     public static final String FILE_TEMPLATE_NAME = PLUGIN_NAME + "_all";

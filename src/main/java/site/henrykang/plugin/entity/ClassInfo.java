@@ -6,6 +6,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
+import site.henrykang.plugin.service.PropertiesManager;
 import site.henrykang.plugin.util.MyPsiUtil;
 import site.henrykang.plugin.util.StringUtil;
 
@@ -38,11 +39,17 @@ public class ClassInfo {
         // 提取请求路径
         String prefix = MyPsiUtil.getAnnotationValueLiteralStr(psiClass.getAnnotation(Constant.ANNO_REQUEST_MAPPING), "value");
         classInfo.reqPrefix = StringUtil.trimSlashes(prefix);
+
+        // 是否忽略 @Deprecated 的配置
+        boolean isIgnoreDeprecated = Boolean.parseBoolean(PropertiesManager.getInstance(psiClass.getProject()).get(Constant.CACHE_KEY_IGNORE_DEPRECATED));
+
         // 提取方法
         classInfo.methodList = PsiTreeUtil.getChildrenOfTypeAsList(psiClass, PsiMethod.class)
             .stream()
             // 只保留被 RequestMapping 等注解修饰的方法
             .filter(psiMethod -> Arrays.stream(psiMethod.getAnnotations()).anyMatch(anno -> Constant.MAPPING_ANNO_SET.contains(anno.getQualifiedName())))
+            // 如果需要忽略 @Deprecated 修饰的方法，则过滤掉
+            .filter(psiMethod -> !isIgnoreDeprecated || psiMethod.getAnnotation("java.lang.Deprecated") == null)
             // 处理每个方法
             .map(MethodInfo::handlePsiMethod)
             .toList();

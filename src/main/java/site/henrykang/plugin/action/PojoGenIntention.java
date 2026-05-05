@@ -6,10 +6,12 @@ import com.intellij.codeInspection.util.IntentionFamilyName;
 import com.intellij.codeInspection.util.IntentionName;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.lang.javascript.JavaScriptFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -57,7 +59,7 @@ public class PojoGenIntention extends BaseElementAtCaretIntentionAction {
 
     @Override
     public boolean isAvailable(@NotNull Project project, @NotNull Editor editor, @NotNull PsiElement psiElement) {
-        return ReadAction.compute(() -> {
+        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
             if (DumbService.isDumb(project) || !(psiElement instanceof PsiIdentifier) || psiElement.getLanguage() != JavaLanguage.INSTANCE) {
                 return false;
             }

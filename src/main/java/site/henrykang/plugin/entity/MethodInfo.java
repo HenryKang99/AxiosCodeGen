@@ -8,7 +8,14 @@ import org.jetbrains.annotations.NotNull;
 import site.henrykang.plugin.service.JsDocTypeResolver;
 import site.henrykang.plugin.util.MyPsiUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
@@ -27,8 +34,10 @@ public class MethodInfo {
     private List<ParamInfo> pathParams;
     /** 查询参数 */
     private List<ParamInfo> queryParams;
-    /** multipart参数 */
+    /** multipart 参数 */
     private List<ParamInfo> partParams;
+    /** urlencoded 参数 */
+    private List<ParamInfo> urlencodedParams;
     /** 请求体参数 */
     private ParamInfo bodyParam;
 
@@ -61,13 +70,36 @@ public class MethodInfo {
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
         Map<String, List<ParamInfo>> map = methodInfo.allParams.stream().collect(Collectors.groupingBy(ParamInfo::getAnnoBindType));
-        methodInfo.pathParams = map.getOrDefault("PathVariable", Collections.emptyList());
-        methodInfo.queryParams = map.getOrDefault("RequestParam", Collections.emptyList());
-        methodInfo.partParams = map.getOrDefault("RequestPart", Collections.emptyList());
+        methodInfo.pathParams = map.getOrDefault("PathVariable", new ArrayList<>());
+        methodInfo.queryParams = map.getOrDefault("RequestParam", new ArrayList<>());
+        methodInfo.partParams = map.getOrDefault("RequestPart", new ArrayList<>());
+        methodInfo.urlencodedParams = new ArrayList<>();
         methodInfo.bodyParam = Optional.ofNullable(map.get("RequestBody")).map(list -> list.get(0)).orElse(null);
 
+        /*
+         * 处理 NoBindType 参数，即无参数绑定注解的参数。
+         * 无注解的自动绑定方式支持：url查询参数、multipart/form-data、application/x-www-form-urlencoded
+         * 对于 pojo 不支持 json 自动解析绑定，支持参数层级嵌套，例如：address.city=shanghai、friends[0].name=henry
+         * 因此，对于此类参数的处理：
+         * 1. get/delete 类型请求，直接将参数添加到 queryParams
+         * 2. 否则统一使用 application/x-www-form-urlencoded
+         */
+        List<ParamInfo> noBindTypeParams = map.getOrDefault("NoBindType", Collections.emptyList());
+        for (ParamInfo noBindParam : noBindTypeParams) {
+            if ("get".equals(methodInfo.method) || "delete".equals(methodInfo.method)) {
+                methodInfo.queryParams.add(noBindParam);
+            } else {
+                methodInfo.urlencodedParams.add(noBindParam);
+            }
+        }
+
         methodInfo.allParamsNameStr = methodInfo.allParams.stream().map(ParamInfo::getName).collect(Collectors.joining(", "));
-        methodInfo.queryParamsNameStr = methodInfo.queryParams.stream().map(ParamInfo::getName).collect(Collectors.joining(", "));
+        methodInfo.queryParamsNameStr = methodInfo.queryParams.stream()
+            .map(paramInfo -> {
+                String prefix = "...";
+                return paramInfo.getIsPojo() ? prefix + paramInfo.getName() : paramInfo.getName();
+            })
+            .collect(Collectors.joining(", "));
         methodInfo.paramsCnt = methodInfo.allParams.size();
 
         // 处理返回值类型
